@@ -6,18 +6,16 @@
 // The user's score and a ❤️ heart reward are displayed for each correct answer. 
 // Feedback is shown for correct and wrong answers.
 
+// import LottieView from '@/components/LottieWrapper';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { Audio } from 'expo-av';
-import LottieView from 'lottie-react-native';
 import { useRef, useState } from 'react';
 import { Animated, Button, Image, TouchableOpacity, View } from 'react-native';
-import confettiAnimation from '../../assets/animations/congrats.json';
 import { hindiLetters as letters } from '../constants/hindiLetters';
-import { quizScreenStyles as styles } from './QuizScreen.styles';
+import { playSoundAsync } from '../helpers/audioHelpers';
+import { quiz2Styles } from './QuizScreen2.styles'; // <-- Import styles from separate file
 
 function generateQuestions() {
-  // 1. Play audio, ask for letter (first 6)
   const audioToLetter = letters.slice(0, 6).map((item) => {
     const options = [item.letter];
     while (options.length < 4) {
@@ -34,7 +32,6 @@ function generateQuestions() {
     };
   });
 
-  // 2. Play audio, ask for image (next 6)
   const audioToImage = letters.slice(6).map((item) => {
     const options = [item];
     while (options.length < 4) {
@@ -68,25 +65,12 @@ export default function QuizScreen2() {
   // For flying heart animation
   const [flyHeart, setFlyHeart] = useState<{ x: number, y: number } | null>(null);
   const flyAnim = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
-  const tileRefs = useRef<(View | null)[]>([]);
 
   const q = questions[current];
 
   // Play the audio for the question
   const playQuestionAudio = async () => {
-    if (q.sound) {
-      try {
-        const { sound } = await Audio.Sound.createAsync(q.sound);
-        await sound.playAsync();
-        sound.setOnPlaybackStatusUpdate((status) => {
-          if (status.didJustFinish) {
-            sound.unloadAsync();
-          }
-        });
-      } catch (e) {
-        // Optionally handle error
-      }
-    }
+    await playSoundAsync(q.sound);
   };
 
   const handleOption = async (idx: number) => {
@@ -95,22 +79,10 @@ export default function QuizScreen2() {
       (q.type === 'audio-to-letter' && q.options[idx] === q.answer) ||
       (q.type === 'audio-to-image' && q.options[idx] === q.answer)
     ) {
-      // Get tile position for both question types
-      tileRefs.current[idx]?.measure((fx, fy, width, height, px, py) => {
-        setFlyHeart({ x: px, y: py });
-        flyAnim.setValue({ x: px, y: py });
-        // Animate to top reward row (adjust x/y as needed for your layout)
-        Animated.timing(flyAnim, {
-          toValue: { x: 180, y: 60 },
-          duration: 700,
-          useNativeDriver: false,
-        }).start(() => {
-          setReward(r => [...r, '❤️']);
-          setFlyHeart(null);
-        });
-      });
+      setReward(r => [...r, '❤️']);
       setScore(score + 1);
       setFeedback('Correct! ❤️');
+      await playSoundAsync(q.sound);
     } else {
       setReward(reward.slice(0, -1));
       setFeedback('Wrong! Try next.');
@@ -122,20 +94,12 @@ export default function QuizScreen2() {
       setCurrent(current + 1);
       setSelected(null);
       setFeedback(null);
-      // Play audio for the next question after state updates
       setTimeout(() => {
         const nextQ = questions[current + 1];
         if (nextQ && nextQ.sound) {
-          Audio.Sound.createAsync(nextQ.sound).then(({ sound }) => {
-            sound.playAsync();
-            sound.setOnPlaybackStatusUpdate((status) => {
-              if (status.didJustFinish) {
-                sound.unloadAsync();
-              }
-            });
-          });
+          playSoundAsync(nextQ.sound);
         }
-      }, 100); // slight delay to ensure UI updates
+      }, 2000); // <-- 2 second delay
     } else {
       setShowResult(true);
     }
@@ -150,73 +114,81 @@ export default function QuizScreen2() {
     setFeedback(null);
   };
 
+  // Helper to chunk options into rows of 2 for 2x2 grid
+  function chunkOptions<T>(arr: T[]) {
+    return [arr.slice(0, 2), arr.slice(2, 4)];
+  }
+
   return (
-    <ThemedView style={styles.container}>
-      {/* Flying heart animation */}
-      {flyHeart && (
-        <Animated.View
-          style={{
-            position: 'absolute',
-            left: flyAnim.x,
-            top: flyAnim.y,
-            zIndex: 10,
-          }}
-        >
-          <ThemedText style={{ fontSize: 32 }}>❤️</ThemedText>
-        </Animated.View>
-      )}
-      <View style={styles.rewardRow}>
+    <ThemedView style={quiz2Styles.container}>
+      {/* Reward row at top */}
+      <View style={quiz2Styles.rewardRow}>
         {reward.map((r, i) => (
-          <ThemedText key={i} style={styles.reward}>{r}</ThemedText>
+          <ThemedText key={i} style={quiz2Styles.reward}>{r}</ThemedText>
         ))}
       </View>
       {!showResult ? (
-        <View>
-          <ThemedText type="title" style={styles.question}>
+        <View style={quiz2Styles.quizBlock}>
+          <ThemedText type="title" style={quiz2Styles.question}>
             {q.question}
           </ThemedText>
           <Button title="🔊 Play Audio" onPress={playQuestionAudio} />
           {q.type === 'audio-to-letter' && (
-            <View style={styles.optionsGrid}>
-              {q.options.map((opt, idx) => (
-                <TouchableOpacity
-                  key={opt}
-                  ref={ref => (tileRefs.current[idx] = ref)}
-                  style={[
-                    styles.optionTile,
-                    selected === idx && {
-                      backgroundColor: q.options[idx] === q.answer ? '#c8e6c9' : '#ffcdd2',
-                      borderColor: q.options[idx] === q.answer ? '#4caf50' : '#f44336',
-                      borderWidth: 2,
-                    },
-                  ]}
-                  onPress={() => handleOption(idx)}
-                  disabled={selected !== null}
-                >
-                  <ThemedText style={styles.optionText}>{opt}</ThemedText>
-                </TouchableOpacity>
+            <View style={quiz2Styles.optionsGrid2x2}>
+              {chunkOptions(q.options).map((row, rowIdx) => (
+                <View key={rowIdx} style={quiz2Styles.optionsRow}>
+                  {row.map((opt, idx) => {
+                    const globalIdx = rowIdx * 2 + idx;
+                    return (
+                      <TouchableOpacity
+                        key={opt}
+                        style={[
+                          quiz2Styles.optionTile2x2,
+                          selected === globalIdx && {
+                            backgroundColor: q.options[globalIdx] === q.answer ? '#c8e6c9' : '#ffcdd2',
+                            borderColor: q.options[globalIdx] === q.answer ? '#4caf50' : '#f44336',
+                            borderWidth: 2,
+                          },
+                        ]}
+                        onPress={() => handleOption(globalIdx)}
+                        disabled={selected !== null}
+                        activeOpacity={0.85}
+                      >
+                        <ThemedText style={quiz2Styles.optionText2x2}>{opt}</ThemedText>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
               ))}
             </View>
           )}
           {q.type === 'audio-to-image' && (
-            <View style={styles.imageOptionsRow}>
-              {q.options.map((img, idx) => (
-                <TouchableOpacity
-                  key={idx}
-                  ref={ref => (tileRefs.current[idx] = ref)}
-                  onPress={() => handleOption(idx)}
-                  disabled={selected !== null}
-                  style={[
-                    styles.imageOption,
-                    selected === idx && {
-                      borderColor:
-                        q.options[idx] === q.answer ? '#4caf50' : '#f44336',
-                      borderWidth: 3,
-                    },
-                  ]}
-                >
-                  <Image source={img} style={styles.quizImageSmall} />
-                </TouchableOpacity>
+            <View style={quiz2Styles.optionsGrid2x2}>
+              {chunkOptions(q.options).map((row, rowIdx) => (
+                <View key={rowIdx} style={quiz2Styles.optionsRow}>
+                  {row.map((img, idx) => {
+                    const globalIdx = rowIdx * 2 + idx;
+                    return (
+                      <TouchableOpacity
+                        key={globalIdx}
+                        onPress={() => handleOption(globalIdx)}
+                        disabled={selected !== null}
+                        style={[
+                          quiz2Styles.optionTile2x2,
+                          { padding: 0 },
+                          selected === globalIdx && {
+                            borderColor:
+                              q.options[globalIdx] === q.answer ? '#4caf50' : '#f44336',
+                            borderWidth: 3,
+                          },
+                        ]}
+                        activeOpacity={0.85}
+                      >
+                        <Image source={img} style={quiz2Styles.tileImage2x2} />
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
               ))}
             </View>
           )}
@@ -232,32 +204,36 @@ export default function QuizScreen2() {
               {feedback}
             </ThemedText>
           )}
-          <View style={{ marginTop: 16 }}>
-            <Button
-              title={current === questions.length - 1 ? 'Finish' : 'Next'}
+          <View style={quiz2Styles.nav}>
+            <TouchableOpacity
+              style={[
+                quiz2Styles.navBtn,
+                { backgroundColor: selected === null ? '#bdbdbd' : '#1976d2' },
+              ]}
               onPress={handleNext}
               disabled={selected === null}
-            />
+              activeOpacity={0.85}
+            >
+              <ThemedText style={quiz2Styles.navBtnText}>
+                {current === questions.length - 1 ? 'Finish' : 'Next ▶'}
+              </ThemedText>
+            </TouchableOpacity>
           </View>
         </View>
       ) : (
-        <View style={{ alignItems: 'center' }}>
-          <LottieView
-            source={confettiAnimation}
-            autoPlay
-            loop={false}
-            style={{ width: 200, height: 200, marginBottom: 16 }}
-          />
+        <View style={quiz2Styles.resultBlock}>
           <ThemedText type="title">🎉 Congratulations! 🎉</ThemedText>
-          <ThemedText style={styles.score}>
+          <ThemedText style={quiz2Styles.score}>
             Your score: {score} / {questions.length}
           </ThemedText>
-          <View style={styles.rewardRow}>
+          <View style={quiz2Styles.rewardRow}>
             {reward.map((r, i) => (
-              <ThemedText key={i} style={styles.reward}>{r}</ThemedText>
+              <ThemedText key={i} style={quiz2Styles.reward}>{r}</ThemedText>
             ))}
           </View>
-          <Button title="Restart Quiz" onPress={handleRestart} />
+          <TouchableOpacity style={quiz2Styles.navBtn} onPress={handleRestart}>
+            <ThemedText style={quiz2Styles.navBtnText}>Restart Quiz</ThemedText>
+          </TouchableOpacity>
         </View>
       )}
     </ThemedView>

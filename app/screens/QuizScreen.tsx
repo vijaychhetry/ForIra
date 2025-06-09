@@ -6,19 +6,16 @@
 // The user's score and a 🦄 unicorn reward are displayed for each correct answer. 
 // Feedback is shown for correct and wrong answers.
 
+import LottieView from '@/components/LottieWrapper';
 import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
-import { Audio } from 'expo-av';
-import LottieView from 'lottie-react-native'; // Make sure you have lottie-react-native installed
+import { useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
-import { Animated, Button, Easing, Image, TouchableOpacity, View } from 'react-native';
-import confettiAnimation from '../../assets/animations/congrats.json'; // Place your animation here
+import { Animated, Dimensions, Image, Platform, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import confettiAnimation from '../../assets/animations/congrats.json';
 import { hindiLetters as letters } from '../constants/hindiLetters';
-import { quizScreenStyles as styles } from './QuizScreen.styles';
+import { playSoundAsync } from '../helpers/audioHelpers';
 
-// Generate quiz questions: some ask for letter given image, some ask for image given letter
 function generateQuestions() {
-  // 1. Show image, ask for letter (first 6)
   const imageToLetter = letters.slice(0, 6).map((item) => {
     const options = [item.letter];
     while (options.length < 4) {
@@ -35,7 +32,6 @@ function generateQuestions() {
     };
   });
 
-  // 2. Show letter, ask for image (next 6)
   const letterToImage = letters.slice(6).map((item) => {
     const options = [item];
     while (options.length < 4) {
@@ -55,9 +51,10 @@ function generateQuestions() {
   return [...imageToLetter, ...letterToImage];
 }
 
-const questions = generateQuestions(); // <-- Add parentheses to call the function
+const questions = generateQuestions();
 
 export default function QuizScreen() {
+  const router = useRouter();
   const [current, setCurrent] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);
   const [score, setScore] = useState(0);
@@ -65,6 +62,7 @@ export default function QuizScreen() {
   const [reward, setReward] = useState<string[]>([]);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [showCongrats, setShowCongrats] = useState(false);
+  const [muted, setMuted] = useState(false);
   const [flyUnicorn, setFlyUnicorn] = useState<{ x: number, y: number } | null>(null);
   const flyAnim = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
 
@@ -79,22 +77,9 @@ export default function QuizScreen() {
       letterObj = letters.find(l => l.letter === q.letter);
     }
     if (letterObj && letterObj.sound) {
-      try {
-        const { sound } = await Audio.Sound.createAsync(letterObj.sound);
-        await sound.playAsync();
-        sound.setOnPlaybackStatusUpdate((status) => {
-          if (status.didJustFinish) {
-            sound.unloadAsync();
-          }
-        });
-      } catch (e) {
-        // Optionally handle error
-      }
+      await playSoundAsync(letterObj.sound);
     }
   };
-
-  // Helper to get position of the pressed tile
-  const tileRefs = useRef<(View | null)[]>([]);
 
   const handleOption = async (idx: number) => {
     setSelected(idx);
@@ -103,25 +88,11 @@ export default function QuizScreen() {
       (q.type === 'image-to-letter' && q.options[idx] === q.answer) ||
       (q.type === 'letter-to-image' && q.options[idx] === q.answer)
     ) {
-      // Get tile position for both question types
-      tileRefs.current[idx]?.measure((fx, fy, width, height, px, py) => {
-        setFlyUnicorn({ x: px, y: py });
-        flyAnim.setValue({ x: px, y: py });
-        // Animate to top reward row (adjust x/y as needed for your layout)
-        Animated.timing(flyAnim, {
-          toValue: { x: 180, y: 60 },
-          duration: 700,
-          easing: Easing.inOut(Easing.quad),
-          useNativeDriver: false,
-        }).start(() => {
-          setReward(r => [...r, '🦄']);
-          setFlyUnicorn(null);
-        });
-      });
+      setReward(r => [...r, '🦄']);
       setScore(score + 1);
       setFeedback('Correct! 🦄');
       isCorrect = true;
-      await playLetterSound();
+      if (!muted) await playLetterSound();
     } else {
       setReward(reward.slice(0, -1));
       setFeedback('Wrong! Try next.');
@@ -151,41 +122,28 @@ export default function QuizScreen() {
   };
 
   return (
-    <ThemedView style={styles.container}>
-      {/* Flying unicorn animation */}
-      {flyUnicorn && (
-        <Animated.View
-          style={{
-            position: 'absolute',
-            left: flyAnim.x,
-            top: flyAnim.y,
-            zIndex: 10,
-          }}
-        >
-          <ThemedText style={{ fontSize: 32 }}>🦄</ThemedText>
-        </Animated.View>
-      )}
-      <View style={styles.rewardRow}>
+    <View style={quizStyles.container}>
+      {/* Reward row at top */}
+      <View style={quizStyles.rewardRow}>
         {reward.map((r, i) => (
-          <ThemedText key={i} style={styles.reward}>{r}</ThemedText>
+          <ThemedText key={i} style={quizStyles.reward}>{r}</ThemedText>
         ))}
       </View>
       {!showResult ? (
-        <View>
-          <ThemedText type="title" style={styles.question}>
+        <View style={quizStyles.quizBlock}>
+          <ThemedText type="title" style={quizStyles.question}>
             {q.question}
           </ThemedText>
           {q.type === 'image-to-letter' && (
-            <Image source={q.image} style={styles.quizImage} />
+            <Image source={q.image} style={quizStyles.quizImage} />
           )}
           {q.type === 'image-to-letter' && (
-            <View style={styles.optionsGrid}>
+            <View style={quizStyles.optionsGrid}>
               {q.options.map((opt, idx) => (
                 <TouchableOpacity
                   key={opt}
-                  ref={ref => (tileRefs.current[idx] = ref)}
                   style={[
-                    styles.optionTile,
+                    quizStyles.optionTile,
                     selected === idx && {
                       backgroundColor: q.options[idx] === q.answer ? '#c8e6c9' : '#ffcdd2',
                       borderColor: q.options[idx] === q.answer ? '#4caf50' : '#f44336',
@@ -194,57 +152,66 @@ export default function QuizScreen() {
                   ]}
                   onPress={() => handleOption(idx)}
                   disabled={selected !== null}
+                  activeOpacity={0.85}
                 >
-                  <ThemedText style={styles.optionText}>{opt}</ThemedText>
+                  <Text style={quizStyles.optionText}>{opt}</Text>
                 </TouchableOpacity>
               ))}
             </View>
           )}
           {q.type === 'letter-to-image' && (
-            <View style={styles.imageOptionsRow}>
+            <View style={quizStyles.imageOptionsRow}>
               {q.options.map((img, idx) => (
                 <TouchableOpacity
                   key={idx}
-                  ref={ref => (tileRefs.current[idx] = ref)}
                   onPress={() => handleOption(idx)}
                   disabled={selected !== null}
                   style={[
-                    styles.imageOption,
+                    quizStyles.imageOption,
                     selected === idx && {
                       borderColor:
                         q.options[idx] === q.answer ? '#4caf50' : '#f44336',
                       borderWidth: 3,
                     },
                   ]}
+                  activeOpacity={0.85}
                 >
-                  <Image source={img} style={styles.quizImageSmall} />
+                  <Image source={img} style={quizStyles.quizImageSmall} />
                 </TouchableOpacity>
               ))}
             </View>
           )}
           {feedback && (
-            <ThemedText
+            <Text
               style={{
                 color: feedback.startsWith('Correct') ? '#4caf50' : '#f44336',
                 textAlign: 'center',
                 marginVertical: 8,
                 fontSize: 18,
+                fontWeight: 'bold',
               }}
             >
               {feedback}
-            </ThemedText>
+            </Text>
           )}
-          <View style={{ marginTop: 16 }}>
-            <Button
-              title={current === questions.length - 1 ? 'Finish' : 'Next'}
+          <View style={quizStyles.nav}>
+            <Pressable
+              style={({ pressed }) => [
+                quizStyles.navBtn,
+                { backgroundColor: pressed ? '#e3e3e3' : '#1976d2' },
+              ]}
               onPress={handleNext}
               disabled={selected === null}
-            />
+            >
+              <Text style={quizStyles.navBtnText}>
+                {current === questions.length - 1 ? 'Finish' : 'Next ▶'}
+              </Text>
+            </Pressable>
           </View>
         </View>
       ) : (
-        <View style={{ alignItems: 'center' }}>
-          {showCongrats && (
+        <View style={{ alignItems: 'center', flex: 1, justifyContent: 'center' }}>
+          {Platform.OS !== 'web' && showCongrats && (
             <LottieView
               source={confettiAnimation}
               autoPlay
@@ -253,17 +220,172 @@ export default function QuizScreen() {
             />
           )}
           <ThemedText type="title">🎉 Congratulations! 🎉</ThemedText>
-          <ThemedText style={styles.score}>
+          <ThemedText style={quizStyles.score}>
             Your score: {score} / {questions.length}
           </ThemedText>
-          <View style={styles.rewardRow}>
+          <View style={quizStyles.rewardRow}>
             {reward.map((r, i) => (
-              <ThemedText key={i} style={styles.reward}>{r}</ThemedText>
+              <ThemedText key={i} style={quizStyles.reward}>{r}</ThemedText>
             ))}
           </View>
-          <Button title="Restart Quiz" onPress={handleRestart} />
+          <View style={quizStyles.nav}>
+            <Pressable
+              style={({ pressed }) => [
+                quizStyles.navBtn,
+                { backgroundColor: pressed ? '#e3e3e3' : '#1976d2' },
+              ]}
+              onPress={handleRestart}
+            >
+              <Text style={quizStyles.navBtnText}>Restart Quiz</Text>
+            </Pressable>
+            <Pressable
+              style={({ pressed }) => [
+                quizStyles.navBtn,
+                { backgroundColor: pressed ? '#e3e3e3' : '#ff9800' },
+              ]}
+              onPress={() => router.push('/(tabs)/quiz/QuizScreen2')}
+            >
+              <Text style={quizStyles.navBtnText}>Try Match Quiz</Text>
+            </Pressable>
+          </View>
         </View>
       )}
-    </ThemedView>
+    </View>
   );
 }
+
+const { width, height } = Dimensions.get('window');
+const TILE_WIDTH = width * 0.85;
+
+const quizStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#f5f6fa',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    paddingTop: 0,
+    minHeight: height,
+  },
+  rewardRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 10,
+    marginBottom: 0, // Changed from 10 to 0 to reduce space below reward
+    justifyContent: 'center',
+    alignItems: 'center',
+    minHeight: 20,
+  },
+  reward: {
+    fontSize: 20,
+    marginHorizontal: 2,
+  },
+  quizBlock: {
+    alignItems: 'center',
+    marginTop: 0,
+    width: '100%',
+    flex: 1,
+    justifyContent: 'flex-start', // Changed from 'center' to 'flex-start'
+  },
+  question: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#1976d2',
+    marginBottom: 10,
+    marginTop: 10, // Add a small margin above the question
+    textAlign: 'center',
+  },
+  quizImage: {
+    width: 180,
+    height: 180,
+    marginBottom: 18,
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: '#1976d2',
+    backgroundColor: '#fff',
+    alignSelf: 'center',
+  },
+  optionsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 18,
+    marginBottom: 18,
+  },
+  optionTile: {
+    minWidth: 80,
+    minHeight: 80,
+    backgroundColor: '#fff',
+    borderRadius: 18,
+    margin: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+  },
+  optionText: {
+    fontSize: 36,
+    color: '#1976d2',
+    fontWeight: 'bold',
+  },
+  imageOptionsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 18,
+    marginBottom: 18,
+  },
+  imageOption: {
+    width: 100,
+    height: 100,
+    backgroundColor: '#fff',
+    borderRadius: 18,
+    margin: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+  },
+  quizImageSmall: {
+    width: 80,
+    height: 80,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#1976d2',
+    backgroundColor: '#fff',
+  },
+  nav: {
+    flexDirection: 'row',
+    gap: 20,
+    marginTop: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  navBtn: {
+    paddingVertical: 14,
+    paddingHorizontal: 22,
+    borderRadius: 30,
+    backgroundColor: '#1976d2',
+    elevation: 2,
+    minWidth: 120,
+    alignItems: 'center',
+  },
+  navBtnText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+    letterSpacing: 1,
+  },
+  score: {
+    fontSize: 28,
+    marginTop: 8,
+    color: '#333',
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+});
