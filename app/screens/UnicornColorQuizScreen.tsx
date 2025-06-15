@@ -1,30 +1,28 @@
 import { useEffect, useState } from 'react';
 import { Button, Text, TouchableOpacity, View } from 'react-native';
 import { playSoundAsync } from '../helpers/audioHelpers';
-import { weekDaysQuizStyles } from './WeekDaysQuizScreen.styles';
+import { unicornQuizStyles } from './UnicornColorQuizScreen.styles';
 
-const days = [
-  { en: 'Monday', hi: 'सोमवार', sound: require('../../assets/sounds/WeekDays/01_Monday.mp3') },
-  { en: 'Tuesday', hi: 'मंगलवार', sound: require('../../assets/sounds/WeekDays/02_Tuesday.mp3') },
-  { en: 'Wednesday', hi: 'बुधवार', sound: require('../../assets/sounds/WeekDays/03_Wednesday.mp3') },
-  { en: 'Thursday', hi: 'गुरुवार', sound: require('../../assets/sounds/WeekDays/04_Thursday.mp3') },
-  { en: 'Friday', hi: 'शुक्रवार', sound: require('../../assets/sounds/WeekDays/05_Friday.mp3') },
-  { en: 'Saturday', hi: 'शनिवार', sound: require('../../assets/sounds/WeekDays/06_Saturday.mp3') },
-  { en: 'Sunday', hi: 'रविवार', sound: require('../../assets/sounds/WeekDays/07_Sunday.mp3') },
+const colors = [
+  { en: 'Red', hi: 'लाल', sound: require('../../assets/sounds/Colors/01_Red.mp3'), emoji: '🦄' },
+  { en: 'Blue', hi: 'नीला', sound: require('../../assets/sounds/Colors/02_Blue.mp3'), emoji: '🦄' },
+  { en: 'Green', hi: 'हरा', sound: require('../../assets/sounds/Colors/03_Green.mp3'), emoji: '🦄' },
+  { en: 'Yellow', hi: 'पीला', sound: require('../../assets/sounds/Colors/04_Yellow.mp3'), emoji: '🦄' },
+  { en: 'Purple', hi: 'बैंगनी', sound: require('../../assets/sounds/Colors/05_Purple.mp3'), emoji: '🦄' },
+  { en: 'Pink', hi: 'गुलाबी', sound: require('../../assets/sounds/Colors/07_Pink.mp3'), emoji: '🦄' },
 ];
 
-// Generate quiz questions: play audio, choose correct Hindi day from 4 options
 function generateQuestions() {
-  return days.map((day) => {
-    // Pick 3 random other days for options
-    const others = days.filter(d => d.hi !== day.hi);
+  return colors.map((color) => {
+    const others = colors.filter(c => c.hi !== color.hi);
     const shuffled = others.sort(() => 0.5 - Math.random()).slice(0, 3);
-    const options = [...shuffled, day].sort(() => 0.5 - Math.random());
+    const options = [...shuffled, color].sort(() => 0.5 - Math.random());
     return {
-      sound: day.sound,
-      answer: day.hi,
+      sound: color.sound,
+      answer: color.hi,
       options,
-      question: 'सुनिए और सही दिन चुनिए:',
+      question: '🌈 सुनिए और सही रंग चुनिए:',
+      emoji: color.emoji,
     };
   });
 }
@@ -35,7 +33,7 @@ function chunkOptions<T>(arr: T[]) {
   return [arr.slice(0, 2), arr.slice(2, 4)];
 }
 
-export default function WeekDaysQuizScreen() {
+export default function UnicornColorQuizScreen() {
   const [current, setCurrent] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);
   const [score, setScore] = useState(0);
@@ -45,7 +43,6 @@ export default function WeekDaysQuizScreen() {
 
   const q = questions[current];
 
-  // Play audio on screen load and when question changes
   useEffect(() => {
     playSoundAsync(q.sound);
   }, [current, showResult]);
@@ -58,8 +55,8 @@ export default function WeekDaysQuizScreen() {
     setSelected(idx);
     if (q.options[idx].hi === q.answer) {
       setScore(score + 1);
-      setReward(r => [...r, '🦋']);
-      setFeedback('सही! 🦋');
+      setReward(r => [...r, '🦄']);
+      setFeedback('सही! 🦄');
     } else {
       setReward(r => r.slice(0, -1));
       setFeedback('गलत! ❌');
@@ -86,29 +83,28 @@ export default function WeekDaysQuizScreen() {
   };
 
   return (
-    <View style={weekDaysQuizStyles.container}>
-      {/* Reward row at top */}
-      <View style={weekDaysQuizStyles.rewardRow}>
+    <View style={unicornQuizStyles.container}>
+      <View style={unicornQuizStyles.rewardRow}>
         {reward.map((r, i) => (
-          <Text key={i} style={weekDaysQuizStyles.reward}>{r}</Text>
+          <Text key={i} style={unicornQuizStyles.reward}>{r}</Text>
         ))}
       </View>
       {!showResult ? (
-        <View style={weekDaysQuizStyles.quizBlock}>
-          <Text style={weekDaysQuizStyles.question}>{q.question}</Text>
+        <View style={unicornQuizStyles.quizBlock}>
+          <Text style={unicornQuizStyles.question}>{q.question}</Text>
           <Button title="🔊 Play Audio" onPress={handlePlay} />
-          <View style={weekDaysQuizStyles.optionsGrid2x2}>
+          <View style={unicornQuizStyles.optionsGrid2x2}>
             {chunkOptions(q.options).map((row, rowIdx) => (
-              <View key={rowIdx} style={weekDaysQuizStyles.optionsRow}>
+              <View key={rowIdx} style={unicornQuizStyles.optionsRow}>
                 {row.map((opt, idx) => {
                   const globalIdx = rowIdx * 2 + idx;
                   return (
                     <TouchableOpacity
                       key={opt.en}
                       style={[
-                        weekDaysQuizStyles.optionTile2x2,
+                        unicornQuizStyles.optionTile2x2,
                         selected === globalIdx && {
-                          backgroundColor: opt.hi === q.answer ? '#c8e6c9' : '#ffcdd2',
+                          backgroundColor: opt.hi === q.answer ? '#e8f5e9' : '#ffebee',
                           borderColor: opt.hi === q.answer ? '#4caf50' : '#f44336',
                           borderWidth: 2,
                         },
@@ -117,14 +113,13 @@ export default function WeekDaysQuizScreen() {
                       disabled={selected !== null}
                       activeOpacity={0.85}
                     >
-                      {/* <Text style={weekDaysQuizStyles.hindi}>{opt.hi}</Text> */}
-                      <Text style={weekDaysQuizStyles.english}>{opt.en}</Text>
+                      <Text style={unicornQuizStyles.english}>{opt.en}</Text>
                       <TouchableOpacity
-                        style={weekDaysQuizStyles.audioBtn}
+                        style={unicornQuizStyles.audioBtn}
                         onPress={() => playSoundAsync(opt.sound)}
                         disabled={selected !== null}
                       >
-                        <Text style={weekDaysQuizStyles.audioIcon}>🔊</Text>
+                        <Text style={unicornQuizStyles.audioIcon}>🔊</Text>
                       </TouchableOpacity>
                     </TouchableOpacity>
                   );
@@ -133,50 +128,42 @@ export default function WeekDaysQuizScreen() {
             ))}
           </View>
           {feedback && (
-            <Text
-              style={{
-                color: feedback.startsWith('सही') ? '#4caf50' : '#f44336',
-                textAlign: 'center',
-                marginVertical: 8,
-                fontSize: 18,
-                fontWeight: 'bold',
-              }}
-            >
+            <Text style={unicornQuizStyles.feedback}>
               {feedback}
             </Text>
           )}
-          <View style={weekDaysQuizStyles.nav}>
+          <View style={unicornQuizStyles.nav}>
             <TouchableOpacity
               style={[
-                weekDaysQuizStyles.navBtn,
-                { backgroundColor: selected === null ? '#bdbdbd' : '#1976d2' },
+                unicornQuizStyles.navBtn,
+                { backgroundColor: selected === null ? '#bdbdbd' : '#9c27b0' },
               ]}
               onPress={handleNext}
               disabled={selected === null}
               activeOpacity={0.85}
             >
-              <Text style={weekDaysQuizStyles.navBtnText}>
+              <Text style={unicornQuizStyles.navBtnText}>
                 {current === questions.length - 1 ? 'Finish' : 'Next ▶'}
               </Text>
             </TouchableOpacity>
           </View>
         </View>
       ) : (
-        <View style={weekDaysQuizStyles.resultBlock}>
-          <Text style={weekDaysQuizStyles.heading}>🎉 Quiz Complete! 🎉</Text>
-          <Text style={weekDaysQuizStyles.score}>
+        <View style={unicornQuizStyles.resultBlock}>
+          <Text style={unicornQuizStyles.heading}>🎉 Quiz Complete! 🎉</Text>
+          <Text style={unicornQuizStyles.score}>
             Your score: {score} / {questions.length}
           </Text>
-          <View style={weekDaysQuizStyles.rewardRow}>
+          <View style={unicornQuizStyles.rewardRow}>
             {reward.map((r, i) => (
-              <Text key={i} style={weekDaysQuizStyles.reward}>{r}</Text>
+              <Text key={i} style={unicornQuizStyles.reward}>{r}</Text>
             ))}
           </View>
-          <TouchableOpacity style={weekDaysQuizStyles.navBtn} onPress={handleRestart}>
-            <Text style={weekDaysQuizStyles.navBtnText}>Restart Quiz</Text>
+          <TouchableOpacity style={unicornQuizStyles.navBtn} onPress={handleRestart}>
+            <Text style={unicornQuizStyles.navBtnText}>Play Again</Text>
           </TouchableOpacity>
         </View>
       )}
     </View>
   );
-}
+} 

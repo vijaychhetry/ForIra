@@ -1,5 +1,6 @@
 import { useRouter } from 'expo-router';
-import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { tabTileStyles } from './TabTile.styles'; // <-- Import common styles
 
 const tiles = [
   {
@@ -28,62 +29,23 @@ const tiles = [
 export default function LearnTab() {
   const router = useRouter();
   return (
-    <View style={styles.container}>
-      {tiles.map((tile, idx) => (
-        <TouchableOpacity
-          key={tile.title}
-          style={[styles.tile, { backgroundColor: tile.color }]}
-          activeOpacity={0.85}
-          onPress={() => tile.onPress(router)}
-        >
-          <Text style={styles.emoji}>{tile.emoji}</Text>
-          <Text style={styles.title}>{tile.title}</Text>
-          <Text style={styles.subtitle}>{tile.subtitle}</Text>
-        </TouchableOpacity>
-      ))}
+    <View style={{ flex: 1, backgroundColor: '#f5f6fa' }}>
+      <ScrollView contentContainerStyle={tabTileStyles.scrollContainer}>
+        <View style={tabTileStyles.container}>
+          {tiles.map((tile, idx) => (
+            <TouchableOpacity
+              key={tile.title}
+              style={[tabTileStyles.tile, { backgroundColor: tile.color }]}
+              activeOpacity={0.85}
+              onPress={() => tile.onPress(router)}
+            >
+              <Text style={tabTileStyles.emoji}>{tile.emoji}</Text>
+              <Text style={tabTileStyles.title}>{tile.title}</Text>
+              <Text style={tabTileStyles.subtitle}>{tile.subtitle}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </ScrollView>
     </View>
   );
 }
-
-const { width } = Dimensions.get('window');
-const TILE_WIDTH = width * 0.85;
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 28,
-    backgroundColor: '#f5f6fa',
-  },
-  tile: {
-    width: TILE_WIDTH,
-    borderRadius: 24,
-    paddingVertical: 32,
-    paddingHorizontal: 24,
-    marginVertical: 10,
-    alignItems: 'center',
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOpacity: 0.12,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-  },
-  emoji: {
-    fontSize: 48,
-    marginBottom: 10,
-  },
-  title: {
-    fontSize: 26,
-    color: '#fff',
-    fontWeight: 'bold',
-    marginBottom: 6,
-    letterSpacing: 1,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#e3f2fd',
-    textAlign: 'center',
-    marginTop: 2,
-  },
-});

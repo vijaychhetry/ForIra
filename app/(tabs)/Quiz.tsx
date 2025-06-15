@@ -1,7 +1,50 @@
 import { useRouter } from 'expo-router';
-import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { tabTileStyles } from './TabTile.styles'; // Use common tab tile styles
 
 const tiles = [
+	{
+		title: 'Unicorn Color Quiz',
+		subtitle: 'Learn colors with magical unicorns',
+		color: '#9c27b0',
+		onPress: (router: any) => router.push('../screens/UnicornColorQuizScreen'),
+		emoji: '🦄',
+	},
+	{
+		title: 'Fruit Quiz',
+		subtitle: 'Test your knowledge of fruits in Hindi',
+		color: '#e91e63',
+		onPress: (router: any) => router.push('../screens/UnicornFruitQuizScreen'),
+		emoji: '🍎',
+	},
+	{
+		title: 'Number Quiz',
+		subtitle: 'Learn numbers in Hindi',
+		color: '#ff9800',
+		onPress: (router: any) => router.push('../screens/UnicornNumberQuizScreen'),
+		emoji: '🔢',
+	},
+	{
+		title: 'Pet Animals Quiz',
+		subtitle: 'Test your knowledge of pet animals',
+		color: '#9c27b0',
+		onPress: (router: any) => router.push('../screens/UnicornPetAnimalsQuizScreen'),
+		emoji: '🐶',
+	},
+	{
+		title: 'Wild Animals Quiz',
+		subtitle: 'Learn about wild animals in Hindi',
+		color: '#ff9800',
+		onPress: (router: any) => router.push('../screens/UnicornWildAnimalsQuizScreen'),
+		emoji: '🦁',
+	},
+	{
+		title: 'Shapes Quiz',
+		subtitle: 'Test your knowledge of shapes',
+		color: '#1976d2',
+		onPress: (router: any) => router.push('../screens/UnicornShapesQuizScreen'),
+		emoji: '⭐',
+	},
 	{
 		title: 'Quiz: Listen & Choose',
 		subtitle: 'Test by listening and picking the right answer',
@@ -28,62 +71,21 @@ const tiles = [
 export default function QuizTab() {
 	const router = useRouter();
 	return (
-		<View style={styles.container}>
-			{tiles.map((tile, idx) => (
-				<TouchableOpacity
-					key={tile.title}
-					style={[styles.tile, { backgroundColor: tile.color }]}
-					activeOpacity={0.85}
-					onPress={() => tile.onPress(router)}
-				>
-					<Text style={styles.emoji}>{tile.emoji}</Text>
-					<Text style={styles.title}>{tile.title}</Text>
-					<Text style={styles.subtitle}>{tile.subtitle}</Text>
-				</TouchableOpacity>
-			))}
-		</View>
+		<ScrollView contentContainerStyle={tabTileStyles.scrollContainer}>
+			<View style={tabTileStyles.container}>
+				{tiles.map((tile) => (
+					<TouchableOpacity
+						key={tile.title}
+						style={[tabTileStyles.tile, { backgroundColor: tile.color }]}
+						activeOpacity={0.85}
+						onPress={() => tile.onPress(router)}
+					>
+						<Text style={tabTileStyles.emoji}>{tile.emoji}</Text>
+						<Text style={tabTileStyles.title}>{tile.title}</Text>
+						<Text style={tabTileStyles.subtitle}>{tile.subtitle}</Text>
+					</TouchableOpacity>
+				))}
+			</View>
+		</ScrollView>
 	);
 }
-
-const { width } = Dimensions.get('window');
-const TILE_WIDTH = width * 0.85;
-
-const styles = StyleSheet.create({
-	container: {
-		flex: 1,
-		justifyContent: 'center',
-		alignItems: 'center',
-		gap: 28,
-		backgroundColor: '#f5f6fa',
-	},
-	tile: {
-		width: TILE_WIDTH,
-		borderRadius: 24,
-		paddingVertical: 32,
-		paddingHorizontal: 24,
-		marginVertical: 10,
-		alignItems: 'center',
-		elevation: 4,
-		shadowColor: '#000',
-		shadowOpacity: 0.12,
-		shadowRadius: 8,
-		shadowOffset: { width: 0, height: 4 },
-	},
-	emoji: {
-		fontSize: 48,
-		marginBottom: 10,
-	},
-	title: {
-		fontSize: 26,
-		color: '#fff',
-		fontWeight: 'bold',
-		marginBottom: 6,
-		letterSpacing: 1,
-	},
-	subtitle: {
-		fontSize: 16,
-		color: '#e3f2fd',
-		textAlign: 'center',
-		marginTop: 2,
-	},
-});
