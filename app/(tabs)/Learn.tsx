@@ -4,11 +4,32 @@ import { tabTileStyles } from './TabTile.styles'; // <-- Import common styles
 
 const tiles = [
   {
-    title: 'Learn Letters',
-    subtitle: 'See and hear Hindi letters',
+    title: 'Learn Vowels & Matras',
+    subtitle: 'See and hear Hindi Vowels & Matras',
     color: '#1976d2',
-    onPress: (router: any) => router.push('../screens/LearnScreen'),
+    onPress: (router: any) => router.push('../screens/LearnScreen?type=vowels&matras=true'),
     emoji: '🔤',
+  },
+  {
+    title: 'Learn Consonants',
+    subtitle: 'See and hear Hindi Consonants',
+    color: '#9c27b0',
+    onPress: (router: any) => router.push('../screens/LearnScreen?type=consonants'),
+    emoji: '📝',
+  },
+  {
+    title: 'Learn Vowels',
+    subtitle: 'See and hear Hindi Vowels',
+    color: '#1976d2',
+    onPress: (router: any) => router.push('../screens/LearnScreen?type=vowels'),
+    emoji: '🔤',
+  },
+  {
+    title: 'Barakhadi',
+    subtitle: 'Learn consonant + vowel combinations',
+    color: '#ff5722',
+    onPress: (router: any) => router.push('../screens/BarakhadiScreen'),
+    emoji: '📚',
   },
   {
     title: 'Trace Letters',

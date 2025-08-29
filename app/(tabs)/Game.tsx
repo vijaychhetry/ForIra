@@ -31,6 +31,13 @@ const tiles = [
     onPress: (router: any) => router.push('/screens/QuickTapScreen'),
     emoji: '⚡',
   },
+  {
+    title: 'Matra Game',
+    subtitle: 'Listen and identify Hindi matras',
+    color: '#9c27b0',
+    onPress: (router: any) => router.push('/screens/MatraGameScreen'),
+    emoji: '🎵',
+  },
 ];
 
 export default function GameTab() {

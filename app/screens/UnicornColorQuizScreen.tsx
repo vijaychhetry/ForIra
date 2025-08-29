@@ -45,7 +45,7 @@ export default function UnicornColorQuizScreen() {
 
   useEffect(() => {
     playSoundAsync(q.sound);
-  }, [current, showResult]);
+  }, [current, showResult, q.sound]);
 
   const handlePlay = async () => {
     await playSoundAsync(q.sound);

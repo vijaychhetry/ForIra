@@ -180,7 +180,7 @@ export default function MemoryFlipScreen() {
       correctSound?.unloadAsync();
       wrongSound?.unloadAsync();
     };
-  }, []);
+  }, [correctSound, wrongSound]);
 
   const playSound = async (sound: Audio.Sound | null) => {
     try {

@@ -10,7 +10,7 @@ export async function playSoundAsync(source: any) {
         sound.unloadAsync();
       }
     });
-  } catch (e) {
+  } catch {
     // Optionally handle error
     // console.warn('Audio play error:', e);
   }

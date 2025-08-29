@@ -12,7 +12,7 @@ import { useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
 import { Animated, Dimensions, Image, Platform, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import confettiAnimation from '../../assets/animations/congrats.json';
-import { hindiLetters as letters } from '../constants/hindiLetters';
+import { hindiVowels as letters } from '../constants/hindiLetters';
 import { playSoundAsync } from '../helpers/audioHelpers';
 
 function generateQuestions() {
@@ -62,9 +62,6 @@ export default function QuizScreen() {
   const [reward, setReward] = useState<string[]>([]);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [showCongrats, setShowCongrats] = useState(false);
-  const [muted, setMuted] = useState(false);
-  const [flyUnicorn, setFlyUnicorn] = useState<{ x: number, y: number } | null>(null);
-  const flyAnim = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
 
   const q = questions[current];
 
@@ -82,8 +79,6 @@ export default function QuizScreen() {
   };
 
   const handleOption = async (idx: number) => {
-    setSelected(idx);
-    let isCorrect = false;
     if (
       (q.type === 'image-to-letter' && q.options[idx] === q.answer) ||
       (q.type === 'letter-to-image' && q.options[idx] === q.answer)
@@ -91,7 +86,6 @@ export default function QuizScreen() {
       setReward(r => [...r, '🦄']);
       setScore(score + 1);
       setFeedback('Correct! 🦄');
-      isCorrect = true;
       if (!muted) await playLetterSound();
     } else {
       setReward(reward.slice(0, -1));
@@ -255,7 +249,6 @@ export default function QuizScreen() {
 }
 
 const { width, height } = Dimensions.get('window');
-const TILE_WIDTH = width * 0.85;
 
 const quizStyles = StyleSheet.create({
   container: {

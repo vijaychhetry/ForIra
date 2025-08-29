@@ -31,7 +31,7 @@ export default function UnicornNumberQuizScreen() {
   // Always generate options when question changes
   useEffect(() => {
     generateOptions(currentQuestion);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [currentQuestion]);
 
   useEffect(() => {

@@ -94,7 +94,7 @@ export default function MatchScreen() {
       wrongSound?.unloadAsync();
       levelCompleteSound?.unloadAsync();
     };
-  }, []);
+  }, [correctSound, wrongSound, levelCompleteSound]);
 
   const playSound = async (sound) => {
     try {

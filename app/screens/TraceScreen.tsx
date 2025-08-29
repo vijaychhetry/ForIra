@@ -4,7 +4,7 @@ import { Audio } from 'expo-av';
 import React, { useRef, useState } from 'react';
 import { Button, Dimensions, PanResponder, StyleSheet, View } from 'react-native';
 import Svg, { Path, Text as SvgText } from 'react-native-svg';
-import { hindiLetters } from '../constants/hindiLetters';
+import { hindiVowels } from '../constants/hindiLetters';
 
 const { width } = Dimensions.get('window');
 const CANVAS_SIZE = width - 40;
@@ -45,7 +45,7 @@ export default function TraceScreen() {
   ).current;
 
   const playSound = async () => {
-    const letter = hindiLetters[index];
+    const letter = hindiVowels[index];
     if (letter.sound) {
       const { sound } = await Audio.Sound.createAsync(letter.sound);
       await sound.playAsync();
@@ -58,16 +58,16 @@ export default function TraceScreen() {
   const clearTrace = () => setPaths([]);
 
   const nextLetter = () => {
-    setIndex((i) => (i + 1) % hindiLetters.length);
+    setIndex((i) => (i + 1) % hindiVowels.length);
     setPaths([]);
   };
 
   const prevLetter = () => {
-    setIndex((i) => (i - 1 + hindiLetters.length) % hindiLetters.length);
+    setIndex((i) => (i - 1 + hindiVowels.length) % hindiVowels.length);
     setPaths([]);
   };
 
-  const letter = hindiLetters[index];
+  const letter = hindiVowels[index];
 
   return (
     <ThemedView style={styles.container}>

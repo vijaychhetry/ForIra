@@ -1,5 +1,5 @@
 import { Audio } from 'expo-av';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const colors = [
@@ -30,7 +30,7 @@ export default function UnicornColorsQuizScreen() {
 
   useEffect(() => {
     generateOptions(currentQuestion);
-  }, [currentQuestion]);
+  }, [currentQuestion, generateOptions]);
 
   useEffect(() => {
     const loadSounds = async () => {
@@ -51,15 +51,15 @@ export default function UnicornColorsQuizScreen() {
       wrongSound?.unloadAsync();
       questionSound?.unloadAsync();
     };
-  }, []);
+  }, [correctSound, wrongSound, questionSound]);
 
   useEffect(() => {
     if (currentQuestion < colors.length) {
       playQuestionSound();
     }
-  }, [currentQuestion]);
+  }, [currentQuestion, playQuestionSound]);
 
-  const generateOptions = (questionIdx: number) => {
+  const generateOptions = useCallback((questionIdx: number) => {
     const currentColor = colors[questionIdx];
     const otherColors = colors.filter(c => c.id !== currentColor.id);
     const shuffledOthers = shuffle(otherColors).slice(0, 3);
@@ -68,9 +68,9 @@ export default function UnicornColorsQuizScreen() {
       allOptions[0] = currentColor;
     }
     setOptions(allOptions.map(c => c.hi));
-  };
+  }, []);
 
-  const playQuestionSound = async () => {
+  const playQuestionSound = useCallback(async () => {
     try {
       if (questionSound) {
         await questionSound.unloadAsync();
@@ -81,7 +81,7 @@ export default function UnicornColorsQuizScreen() {
     } catch (error) {
       console.log('Error playing question sound:', error);
     }
-  };
+  }, [currentQuestion, questionSound]);
 
   const playSound = async (sound: Audio.Sound | null) => {
     try {

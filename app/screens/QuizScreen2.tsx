@@ -11,7 +11,7 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { useRef, useState } from 'react';
 import { Animated, Button, Image, TouchableOpacity, View } from 'react-native';
-import { hindiLetters as letters } from '../constants/hindiLetters';
+import { hindiVowels as letters } from '../constants/hindiLetters';
 import { playSoundAsync } from '../helpers/audioHelpers';
 import { quiz2Styles } from './QuizScreen2.styles'; // <-- Import styles from separate file
 
@@ -61,10 +61,6 @@ export default function QuizScreen2() {
   const [showResult, setShowResult] = useState(false);
   const [reward, setReward] = useState<string[]>([]);
   const [feedback, setFeedback] = useState<string | null>(null);
-
-  // For flying heart animation
-  const [flyHeart, setFlyHeart] = useState<{ x: number, y: number } | null>(null);
-  const flyAnim = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
 
   const q = questions[current];
 
