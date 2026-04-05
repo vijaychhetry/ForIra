@@ -1,37 +1,66 @@
 import { Audio } from 'expo-av';
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import Tts from 'react-native-tts';
 import { barakhadi } from '../constants/hindiLetters';
 import { getBarakhadiSound, hasBarakhadiSound } from '../helpers/barakhadiHelpers';
 
 export default function BarakhadiScreen() {
   const [selectedConsonant, setSelectedConsonant] = useState(0);
-  const [sound, setSound] = useState<Audio.Sound | null>(null);
+  const soundRef = useRef<Audio.Sound | null>(null);
+  const [ttsReady, setTtsReady] = useState(false);
 
   const currentBarakhadi = barakhadi[selectedConsonant];
 
+  // Set up TTS for Hindi on mount; clean up audio on unmount
+  useEffect(() => {
+    Tts.setDefaultLanguage('hi-IN').catch(() => {
+      // hi-IN may not be available on all devices — fall back silently
+    });
+    Tts.setDefaultRate(0.4);
+    Tts.setDefaultPitch(1.1);
+    setTtsReady(true);
+
+    return () => {
+      soundRef.current?.unloadAsync().catch(() => {});
+      soundRef.current = null;
+      Tts.stop();
+    };
+  }, []);
+
   async function playBarakhadiSound(syllable: string) {
-    // Release previous sound if any
-    if (sound) {
-      await sound.unloadAsync();
-      setSound(null);
+    // Unload any currently loaded audio
+    if (soundRef.current) {
+      await soundRef.current.unloadAsync().catch(() => {});
+      soundRef.current = null;
     }
-    
-    try {
-      // Check if sound exists for this syllable
-      if (!hasBarakhadiSound(syllable)) {
-        console.warn(`No sound found for syllable: ${syllable}`);
-        return;
+
+    if (hasBarakhadiSound(syllable)) {
+      // Play the recorded MP3
+      try {
+        const soundSource = getBarakhadiSound(syllable);
+        const { sound } = await Audio.Sound.createAsync(soundSource);
+        soundRef.current = sound;
+        await sound.playAsync();
+        sound.setOnPlaybackStatusUpdate((status) => {
+          if (status.isLoaded && status.didJustFinish) {
+            sound.unloadAsync().catch(() => {});
+            soundRef.current = null;
+          }
+        });
+      } catch (e) {
+        console.warn('Could not play barakhadi MP3, falling back to TTS:', e);
+        speakWithTts(syllable);
       }
-      
-      // Get the sound source from helper
-      const soundSource = getBarakhadiSound(syllable);
-      const { sound: newSound } = await Audio.Sound.createAsync(soundSource);
-      setSound(newSound);
-      await newSound.playAsync();
-    } catch (e) {
-      console.warn('Could not play sound:', e);
+    } else if (ttsReady) {
+      // No MP3 — use TTS to speak the syllable
+      speakWithTts(syllable);
     }
+  }
+
+  function speakWithTts(syllable: string) {
+    Tts.stop();
+    Tts.speak(syllable);
   }
 
   return (
@@ -46,13 +75,13 @@ export default function BarakhadiScreen() {
             key={item.consonant}
             style={[
               styles.consonantButton,
-              selectedConsonant === index && styles.selectedConsonant
+              selectedConsonant === index && styles.selectedConsonant,
             ]}
             onPress={() => setSelectedConsonant(index)}
           >
             <Text style={[
               styles.consonantText,
-              selectedConsonant === index && styles.selectedConsonantText
+              selectedConsonant === index && styles.selectedConsonantText,
             ]}>
               {item.consonant}
             </Text>
@@ -63,17 +92,21 @@ export default function BarakhadiScreen() {
       {/* Barakhadi Grid */}
       <ScrollView style={styles.gridContainer}>
         <View style={styles.grid}>
-          {currentBarakhadi.combinations.map((combination, index) => (
-            <TouchableOpacity
-              key={index}
-              style={styles.gridItem}
-              onPress={() => playBarakhadiSound(combination.syllable)}
-            >
-              <Text style={styles.syllable}>{combination.syllable}</Text>
-              <Text style={styles.matra}>{combination.matra}</Text>
-              <Text style={styles.vowel}>{combination.vowel}</Text>
-            </TouchableOpacity>
-          ))}
+          {currentBarakhadi.combinations.map((combination, index) => {
+            const hasMp3 = hasBarakhadiSound(combination.syllable);
+            return (
+              <TouchableOpacity
+                key={index}
+                style={[styles.gridItem, !hasMp3 && styles.gridItemTts]}
+                onPress={() => playBarakhadiSound(combination.syllable)}
+              >
+                <Text style={styles.syllable}>{combination.syllable}</Text>
+                <Text style={styles.matra}>{combination.matra}</Text>
+                <Text style={styles.vowel}>{combination.vowel}</Text>
+                {!hasMp3 && <Text style={styles.ttsTag}>TTS</Text>}
+              </TouchableOpacity>
+            );
+          })}
         </View>
       </ScrollView>
 
@@ -163,6 +196,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#e0e0e0',
   },
+  gridItemTts: {
+    borderColor: '#b39ddb',
+    borderStyle: 'dashed',
+  },
   syllable: {
     fontSize: 28,
     fontWeight: 'bold',
@@ -177,6 +214,13 @@ const styles = StyleSheet.create({
   vowel: {
     fontSize: 12,
     color: '#666',
+  },
+  ttsTag: {
+    fontSize: 9,
+    color: '#9c27b0',
+    marginTop: 2,
+    fontWeight: 'bold',
+    letterSpacing: 0.5,
   },
   legend: {
     padding: 20,
@@ -206,4 +250,4 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#ff5722',
   },
-}); 
+});

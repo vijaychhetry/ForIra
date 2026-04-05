@@ -1,5 +1,5 @@
 import { Audio } from 'expo-av';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const fruits = [
@@ -21,41 +21,57 @@ function shuffle<T>(arr: T[]): T[] {
 
 export default function UnicornFruitQuizScreen() {
   const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [options, setOptions] = useState<string[]>([]);
   const [score, setScore] = useState(0);
   const [showResult, setShowResult] = useState(false);
-  const [correctSound, setCorrectSound] = useState<Audio.Sound | null>(null);
-  const [wrongSound, setWrongSound] = useState<Audio.Sound | null>(null);
-  const [questionSound, setQuestionSound] = useState<Audio.Sound | null>(null);
 
-  // Always generate options when question changes
-  useEffect(() => {
-    generateOptions(currentQuestion);
-     
+  // BUG-001 fix: use refs so cleanup always has the current sound object
+  const correctSoundRef = useRef<Audio.Sound | null>(null);
+  const wrongSoundRef = useRef<Audio.Sound | null>(null);
+  const questionSoundRef = useRef<Audio.Sound | null>(null);
+
+  // BUG-006 fix: generate options with useMemo so they don't re-shuffle on every render
+  const options = useMemo(() => {
+    const current = fruits[currentQuestion];
+    const others = shuffle(fruits.filter(f => f.id !== current.id)).slice(0, 3);
+    return shuffle([current, ...others]).map(f => f.hi);
   }, [currentQuestion]);
 
+  // Load correct/wrong SFX once and clean up via refs
   useEffect(() => {
-    const loadSounds = async () => {
-      const { sound: correct } = await Audio.Sound.createAsync(
-        require('../../assets/sounds/game/correct.mp3')
-      );
-      const { sound: wrong } = await Audio.Sound.createAsync(
-        require('../../assets/sounds/game/wrong.mp3')
-      );
-      setCorrectSound(correct);
-      setWrongSound(wrong);
+    let mounted = true;
+    const load = async () => {
+      try {
+        const { sound: correct } = await Audio.Sound.createAsync(
+          require('../../assets/sounds/game/correct.mp3')
+        );
+        const { sound: wrong } = await Audio.Sound.createAsync(
+          require('../../assets/sounds/game/wrong.mp3')
+        );
+        if (mounted) {
+          correctSoundRef.current = correct;
+          wrongSoundRef.current = wrong;
+        } else {
+          // Component unmounted before load finished — clean up immediately
+          correct.unloadAsync().catch(() => {});
+          wrong.unloadAsync().catch(() => {});
+        }
+      } catch (e) {
+        console.warn('Failed to load SFX:', e);
+      }
     };
-
-    loadSounds();
-
+    load();
     return () => {
-      correctSound?.unloadAsync();
-      wrongSound?.unloadAsync();
-      questionSound?.unloadAsync();
+      mounted = false;
+      correctSoundRef.current?.unloadAsync().catch(() => {});
+      wrongSoundRef.current?.unloadAsync().catch(() => {});
+      questionSoundRef.current?.unloadAsync().catch(() => {});
+      correctSoundRef.current = null;
+      wrongSoundRef.current = null;
+      questionSoundRef.current = null;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Play question sound whenever currentQuestion changes
   useEffect(() => {
     if (currentQuestion < fruits.length) {
       playQuestionSound();
@@ -63,40 +79,28 @@ export default function UnicornFruitQuizScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentQuestion]);
 
-  // Always include correct answer in options
-  const generateOptions = (questionIdx: number) => {
-    const currentFruit = fruits[questionIdx];
-    const otherFruits = fruits.filter(f => f.id !== currentFruit.id);
-    const shuffledOthers = shuffle(otherFruits).slice(0, 3);
-    const allOptions = shuffle([currentFruit, ...shuffledOthers]);
-    // Ensure correct answer is present
-    if (!allOptions.some(opt => opt.id === currentFruit.id)) {
-      allOptions[0] = currentFruit;
-    }
-    setOptions(allOptions.map(f => f.hi));
-  };
-
   const playQuestionSound = async () => {
     try {
-      if (questionSound) {
-        await questionSound.unloadAsync();
+      if (questionSoundRef.current) {
+        await questionSoundRef.current.unloadAsync();
+        questionSoundRef.current = null;
       }
       const { sound } = await Audio.Sound.createAsync(fruits[currentQuestion].sound);
-      setQuestionSound(sound);
+      questionSoundRef.current = sound;
       await sound.playAsync();
-    } catch (error) {
-      console.log('Error playing question sound:', error);
+    } catch (e) {
+      console.warn('Error playing question sound:', e);
     }
   };
 
-  const playSound = async (sound: Audio.Sound | null) => {
+  const playSFX = async (soundRef: React.RefObject<Audio.Sound | null>) => {
     try {
-      if (sound) {
-        await sound.setPositionAsync(0);
-        await sound.playAsync();
+      if (soundRef.current) {
+        await soundRef.current.setPositionAsync(0);
+        await soundRef.current.playAsync();
       }
-    } catch (error) {
-      console.log('Error playing sound:', error);
+    } catch (e) {
+      console.warn('Error playing SFX:', e);
     }
   };
 
@@ -104,32 +108,25 @@ export default function UnicornFruitQuizScreen() {
     const isCorrect = selectedOption === fruits[currentQuestion].hi;
 
     if (isCorrect) {
-      await playSound(correctSound);
-      setScore(score + 1);
+      await playSFX(correctSoundRef);
+      setScore(s => s + 1);
     } else {
-      await playSound(wrongSound);
+      await playSFX(wrongSoundRef);
     }
 
-    if (currentQuestion < fruits.length - 1) {
-      setTimeout(() => {
-        setCurrentQuestion(q => {
-          const nextQ = q + 1;
-          generateOptions(nextQ);
-          return nextQ;
-        });
-      }, 1000);
-    } else {
-      setTimeout(() => {
+    setTimeout(() => {
+      if (currentQuestion < fruits.length - 1) {
+        setCurrentQuestion(q => q + 1);
+      } else {
         setShowResult(true);
-      }, 1000);
-    }
+      }
+    }, 1000);
   };
 
   const handleRestart = () => {
     setCurrentQuestion(0);
     setScore(0);
     setShowResult(false);
-    generateOptions(0);
   };
 
   if (showResult) {
@@ -149,7 +146,7 @@ export default function UnicornFruitQuizScreen() {
       <Text style={styles.heading}>🦄 Fruits Quiz</Text>
       <Text style={styles.progress}>Question {currentQuestion + 1} of {fruits.length}</Text>
       <Text style={styles.score}>Score: {score}</Text>
-      
+
       <TouchableOpacity style={styles.soundButton} onPress={playQuestionSound}>
         <Text style={styles.soundButtonText}>🔊 Play Sound</Text>
       </TouchableOpacity>
