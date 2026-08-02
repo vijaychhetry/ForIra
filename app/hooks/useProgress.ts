@@ -177,13 +177,43 @@ export function useProgress() {
     [data]
   );
 
+  /** Equips (or un-equips, via `itemId = null`) an item in the given avatar category. */
+  const equipAvatarItem = useCallback(
+    async (category: keyof AvatarLoadout, itemId: string | null): Promise<AvatarLoadout> => {
+      const fresh = await loadProgressData();
+      const updatedAvatar: AvatarLoadout = { ...fresh.avatar, [category]: itemId };
+      const updated: ProgressData = { ...fresh, avatar: updatedAvatar };
+      await saveProgressData(updated);
+      setData(updated);
+      return updatedAvatar;
+    },
+    []
+  );
+
+  /** Adds an item id to the owned items list (no-op if already owned). */
+  const addOwnedItem = useCallback(async (itemId: string): Promise<string[]> => {
+    const fresh = await loadProgressData();
+    if (fresh.ownedItems.includes(itemId)) {
+      return fresh.ownedItems;
+    }
+    const updatedOwned = [...fresh.ownedItems, itemId];
+    const updated: ProgressData = { ...fresh, ownedItems: updatedOwned };
+    await saveProgressData(updated);
+    setData(updated);
+    return updatedOwned;
+  }, []);
+
   return {
     loading,
     levels: data.levels,
     totalStars: data.totalStars,
+    avatar: data.avatar,
+    ownedItems: data.ownedItems,
     getLevelProgress,
     saveLevelProgress,
     isLevelUnlocked,
+    equipAvatarItem,
+    addOwnedItem,
     refresh,
   };
 }
