@@ -8,7 +8,8 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "verify:read-tab-nav": "node scripts/verify-read-tab-navigation.js"
   },
   "dependencies": {
     "@expo/vector-icons": "^14.1.0",
