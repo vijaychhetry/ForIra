@@ -99,11 +99,135 @@
   "historical": {
     "_doc": "Written by harvester after each sprint. Contains actual per-role output token averages from sprint-log JSONL files. Used by auto-sprint.js computeSprintQuote() to improve future estimates. Do not edit manually.",
     "max_sprints_in_sample": 5,
-    "sprints_sampled": 0,
-    "last_updated": null,
-    "cycle_avg": null,
-    "reviewer_ratio_avg": null,
-    "bucket_avg_tokens": {},
-    "roles": {}
+    "sprints_sampled": 1,
+    "last_updated": "2026-08-02",
+    "cycle_avg": 2,
+    "reviewer_ratio_avg": 0.13542189186313405,
+    "bucket_avg_tokens": {
+      "M": 17743.444444444445,
+      "L": 18835
+    },
+    "roles": {
+      "setup-shell": {
+        "avg_output_tokens": 3643,
+        "sample_n": 1
+      },
+      "setup": {
+        "avg_output_tokens": 5366,
+        "sample_n": 1
+      },
+      "state-read": {
+        "avg_output_tokens": 640,
+        "sample_n": 1
+      },
+      "preflight-bd-schema": {
+        "avg_output_tokens": 684,
+        "sample_n": 1
+      },
+      "state-init": {
+        "avg_output_tokens": 1258,
+        "sample_n": 1
+      },
+      "sprint-meta": {
+        "avg_output_tokens": 698,
+        "sample_n": 1
+      },
+      "stamp-setup": {
+        "avg_output_tokens": 294,
+        "sample_n": 1
+      },
+      "stamp-plan": {
+        "avg_output_tokens": 406.5,
+        "sample_n": 2
+      },
+      "cycle-meta": {
+        "avg_output_tokens": 4351,
+        "sample_n": 2
+      },
+      "cycle-state": {
+        "avg_output_tokens": 7899.5,
+        "sample_n": 2
+      },
+      "state": {
+        "avg_output_tokens": 1208,
+        "sample_n": 4
+      },
+      "planner": {
+        "avg_output_tokens": 15960.5,
+        "sample_n": 2
+      },
+      "plan-reviewer": {
+        "avg_output_tokens": 13367.5,
+        "sample_n": 2
+      },
+      "feedback-commit-plan-reviewer": {
+        "avg_output_tokens": 2588,
+        "sample_n": 1
+      },
+      "plan-commit": {
+        "avg_output_tokens": 3756,
+        "sample_n": 1
+      },
+      "stamp-develop": {
+        "avg_output_tokens": 292,
+        "sample_n": 2
+      },
+      "heartbeat": {
+        "avg_output_tokens": 2316,
+        "sample_n": 5
+      },
+      "ready-streaks": {
+        "avg_output_tokens": 3773.4,
+        "sample_n": 5
+      },
+      "doer": {
+        "avg_output_tokens": 39472.2,
+        "sample_n": 5
+      },
+      "reviewer": {
+        "avg_output_tokens": 8909,
+        "sample_n": 3
+      },
+      "log-append-iter": {
+        "avg_output_tokens": 2933,
+        "sample_n": 3
+      },
+      "push-sha": {
+        "avg_output_tokens": 673,
+        "sample_n": 2
+      },
+      "exit-check": {
+        "avg_output_tokens": 4511,
+        "sample_n": 2
+      },
+      "log-append-end": {
+        "avg_output_tokens": 3562.5,
+        "sample_n": 2
+      },
+      "reset-orphans": {
+        "avg_output_tokens": 528,
+        "sample_n": 1
+      },
+      "check-blockers": {
+        "avg_output_tokens": 11347,
+        "sample_n": 1
+      },
+      "deadlock-diag": {
+        "avg_output_tokens": 1320,
+        "sample_n": 1
+      },
+      "stamp-harvest": {
+        "avg_output_tokens": 773,
+        "sample_n": 1
+      },
+      "harvest-clean-process-files": {
+        "avg_output_tokens": 1167,
+        "sample_n": 1
+      },
+      "final-reviewer": {
+        "avg_output_tokens": 8318,
+        "sample_n": 1
+      }
+    }
   }
 }
