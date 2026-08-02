@@ -163,6 +163,27 @@ export function useProgress() {
     []
   );
 
+  const getStoryProgress = useCallback(
+    (storyId: string): StoryProgress => {
+      return data.stories[storyId] ?? { read: false };
+    },
+    [data]
+  );
+
+  const saveStoryProgress = useCallback(
+    async (storyId: string, quizScore: number): Promise<StoryProgress> => {
+      const fresh = await loadProgressData();
+      const updatedStory: StoryProgress = { read: true, quizScore };
+      const updatedStories = { ...fresh.stories, [storyId]: updatedStory };
+      const updated: ProgressData = { ...fresh, stories: updatedStories };
+
+      await saveProgressData(updated);
+      setData(updated);
+      return updatedStory;
+    },
+    []
+  );
+
   const isLevelUnlocked = useCallback(
     (levelId: string): boolean => {
       const idx = MATRA_LEVEL_ORDER.indexOf(levelId);
@@ -209,11 +230,14 @@ export function useProgress() {
     totalStars: data.totalStars,
     avatar: data.avatar,
     ownedItems: data.ownedItems,
+    stories: data.stories,
     getLevelProgress,
     saveLevelProgress,
     isLevelUnlocked,
     equipAvatarItem,
     addOwnedItem,
+    getStoryProgress,
+    saveStoryProgress,
     refresh,
   };
 }

@@ -250,3 +250,124 @@ export const matraLevels: MatraLevel[] = [
     ]),
   },
 ];
+
+// =========================================================================
+// Stories -- Stories tab (see ForIra-hh0 / ForIra-moa)
+// =========================================================================
+//
+// NOTE: This is a small starter set of stories using simple, already-taught
+// vocabulary so the Stories screens (StoryListScreen/StoryScreen) have real
+// content to render end-to-end. The full 5-story set with polished
+// vocabulary-gated content is tracked separately (ForIra-moa); that task can
+// extend or replace these entries using the same `Story` shape.
+
+export interface StoryPage {
+  /** Words for this page, rendered via KaraokeText and read aloud in order. */
+  words: string[];
+}
+
+export interface StoryQuestion {
+  question: string;
+  options: string[];
+  /** Index into `options` of the correct answer. */
+  correctIndex: number;
+}
+
+export interface Story {
+  id: string;
+  title: string;
+  /** Placeholder illustration emoji shown in the colored illustration area. */
+  emoji: string;
+  difficulty: 'easy' | 'medium' | 'hard';
+  pages: StoryPage[];
+  questions: StoryQuestion[];
+  /** Matra level id that must be completed (80%+) before this story unlocks; null = always unlocked. */
+  unlockAfterLevelId: string | null;
+}
+
+export const stories: Story[] = [
+  {
+    id: 'thirsty_crow',
+    title: 'प्यासा कौआ',
+    emoji: '🐦',
+    difficulty: 'easy',
+    unlockAfterLevelId: null,
+    pages: [
+      { words: ['एक', 'कौआ', 'था।'] },
+      { words: ['कौआ', 'बहुत', 'प्यासा', 'था।'] },
+      { words: ['उसे', 'एक', 'घड़ा', 'मिला।'] },
+      { words: ['घड़े', 'में', 'थोड़ा', 'पानी', 'था।'] },
+      { words: ['कौए', 'ने', 'कंकड़', 'डाले।'] },
+      { words: ['पानी', 'ऊपर', 'आया।'] },
+      { words: ['कौए', 'ने', 'पानी', 'पिया।'] },
+    ],
+    questions: [
+      {
+        question: 'कौआ कैसा था?',
+        options: ['प्यासा', 'खुश', 'सोया हुआ'],
+        correctIndex: 0,
+      },
+      {
+        question: 'कौए ने घड़े में क्या डाला?',
+        options: ['पानी', 'कंकड़', 'दाना'],
+        correctIndex: 1,
+      },
+    ],
+  },
+  {
+    id: 'lion_mouse',
+    title: 'शेर और चूहा',
+    emoji: '🦁',
+    difficulty: 'easy',
+    unlockAfterLevelId: 'matra_i',
+    pages: [
+      { words: ['एक', 'शेर', 'सोया', 'था।'] },
+      { words: ['एक', 'चूहा', 'वहाँ', 'दौड़ा।'] },
+      { words: ['शेर', 'जाग', 'गया।'] },
+      { words: ['चूहे', 'ने', 'माफी', 'मांगी।'] },
+      { words: ['शेर', 'ने', 'चूहे', 'को', 'छोड़ा।'] },
+      { words: ['बाद', 'में', 'शेर', 'जाल', 'में', 'फंसा।'] },
+      { words: ['चूहे', 'ने', 'जाल', 'काटा।'] },
+      { words: ['शेर', 'आजाद', 'हो', 'गया।'] },
+    ],
+    questions: [
+      {
+        question: 'शेर कहाँ फंसा?',
+        options: ['पानी में', 'जाल में', 'पेड़ में'],
+        correctIndex: 1,
+      },
+      {
+        question: 'चूहे ने शेर की मदद कैसे की?',
+        options: ['जाल काटा', 'पानी दिया', 'गाना गाया'],
+        correctIndex: 0,
+      },
+    ],
+  },
+  {
+    id: 'greedy_dog',
+    title: 'लालची कुत्ता',
+    emoji: '🐕',
+    difficulty: 'medium',
+    unlockAfterLevelId: 'matra_ii',
+    pages: [
+      { words: ['एक', 'कुत्ता', 'था।'] },
+      { words: ['उसे', 'एक', 'रोटी', 'मिली।'] },
+      { words: ['वह', 'पुल', 'पर', 'गया।'] },
+      { words: ['पानी', 'में', 'परछाई', 'दिखी।'] },
+      { words: ['उसे', 'लगा', 'दूसरी', 'रोटी', 'है।'] },
+      { words: ['उसने', 'भौंका', 'और', 'रोटी', 'गिरा', 'दी।'] },
+    ],
+    questions: [
+      {
+        question: 'कुत्ते को पानी में क्या दिखा?',
+        options: ['एक मछली', 'अपनी परछाई', 'एक पेड़'],
+        correctIndex: 1,
+      },
+      {
+        question: 'कहानी से क्या सीख मिलती है?',
+        options: ['लालच बुरा है', 'तैरना सीखो', 'दौड़ना अच्छा है'],
+        correctIndex: 0,
+      },
+    ],
+  },
+];
