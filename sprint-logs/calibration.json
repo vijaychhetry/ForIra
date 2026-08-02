@@ -1,0 +1,233 @@
+{
+  "_doc": "Sprint cost calibration. All estimation constants live here -- nothing is hardcoded in agents. Fields named _doc are documentation strings; skip them when reading values. The historical section is written automatically by the harvester after each sprint; do not edit it manually.",
+  "schema_version": 1,
+  "model_prices_per_1m_output_tokens": {
+    "_doc": "USD per 1M output tokens, keyed by tier name (cheap/standard/premium). Source: Anthropic published pricing 2026-06-04. Update when pricing changes. Provider-specific model IDs are resolved from tier names in auto-sprint.js TIER_TO_MODEL -- they never appear in this file.",
+    "cheap": 5,
+    "standard": 15,
+    "premium": 25
+  },
+  "role_models": {
+    "_doc": "Tier name per workflow role. 'doer' and 'reviewer' are NOT here -- the planner sets tier per task in beads metadata; reviewer escalates to max(task_tier, standard). Change an entry here to reroute a role to a different tier.",
+    "setup": "cheap",
+    "planner": "premium",
+    "plan-reviewer": "standard",
+    "deployer": "standard",
+    "integ-test-runner": "standard",
+    "ci-watcher": "cheap",
+    "harvester": "standard",
+    "log-flush": "cheap",
+    "check-blockers": "cheap",
+    "ready-streaks": "cheap"
+  },
+  "doer_model_fallback": {
+    "_doc": "Tier assumed for doer cost estimation when a task has no tier metadata in beads. In practice the planner always sets tier metadata -- this is a safety net only.",
+    "model": "standard"
+  },
+  "reviewer_model_rule": {
+    "_doc": "Reviewer tier is max(doer_task_tier, minimum). If the doer used premium, reviewer uses premium; otherwise reviewer uses standard. This mirrors the reviewerModel selection in auto-sprint.js.",
+    "minimum": "standard"
+  },
+  "complexity_buckets": {
+    "_doc": "Estimated doer output tokens per task by complexity bucket S/M/L. Plan-reviewer assigns a bucket to each task by reading its description. historical.bucket_avg_tokens overrides these defaults once enough sprint data has been collected.",
+    "S": {
+      "_doc": "Small: 1 file, narrow scoped change -- rename, config key, simple wiring, pure boilerplate",
+      "doer_tokens": 600
+    },
+    "M": {
+      "_doc": "Medium: 2-3 files, moderate logic -- new API endpoint, test suite, small focused refactor",
+      "doer_tokens": 1400
+    },
+    "L": {
+      "_doc": "Large: 3+ files or non-trivial design -- new auth flow, data migration, cross-cutting refactor",
+      "doer_tokens": 2800
+    }
+  },
+  "reviewer_ratio": {
+    "_doc": "Reviewer estimated output tokens as a fraction of doer tokens for the same task. 0.4 means reviewer uses ~40% as many output tokens as the doer. Overridden by historical.reviewer_ratio_avg when available.",
+    "value": 0.4
+  },
+  "cycle_assumptions": {
+    "_doc": "Expected number of dev/review cycles. Per-task cost is multiplied by these to produce sprint-level cost scenarios. Update 'expected' if your team consistently lands at a different cycle count.",
+    "optimistic": 1,
+    "expected": 1.5,
+    "pessimistic": 2.5
+  },
+  "fixed_overhead_tokens": {
+    "_doc": "Estimated output tokens for agents that run once per sprint regardless of task count. 'log_flush_per_cycle' is multiplied by the expected cycle count. Keys use underscores; the role lookup strips underscores to match role_models keys.",
+    "setup": 200,
+    "planner": 2000,
+    "plan_reviewer": 1500,
+    "harvester": 3000,
+    "ci_watcher": 300,
+    "log_flush_per_cycle": 100
+  },
+  "input_cost_multiplier": {
+    "_doc": "Multiply output-only USD estimate by this to approximate true cost (input + output). 4.0 is conservative for long-context agents. Replace with an empirical ratio once the workflow harness exposes input token counts.",
+    "value": 4
+  },
+  "outlier_thresholds": {
+    "_doc": "Percentage deviation bands used to classify estimation accuracy in the sprint analysis report.",
+    "notable_pct": 50,
+    "outlier_pct": 200,
+    "calibration_failure_pct": 500
+  },
+  "doer_token_ceiling": {
+    "_doc": "Maximum output tokens for a single doer streak, keyed by tier name. Streaks that exceed this token budget are split and re-queued.",
+    "cheap": 40000,
+    "standard": 80000,
+    "premium": 150000
+  },
+  "context_limits": {
+    "_doc": "Doer context-window budgeting. Used to predict whether a ready-task streak will fit in the model usable context before autocompact/session-limit truncation, and to split streaks proactively. Keyed by tier.",
+    "model_context_tokens": {
+      "_doc": "Total context window per tier (tokens).",
+      "cheap": 200000,
+      "standard": 200000,
+      "premium": 200000
+    },
+    "autocompact_headroom_fraction": 0.72,
+    "base_prompt_tokens": 9000,
+    "per_task_input_overhead_tokens": 3500,
+    "output_expansion_factor": 1
+  },
+  "parallelism": {
+    "_doc": "Doer concurrency (EXPERIMENTAL -- default 1 = proven serial path). When max_doers>1, independent bd-ready tasks are fanned out into isolated git worktrees, worked by one doer each in parallel, then merged back into the sprint branch sequentially with a conflict->re-queue fallback. This path is NOT yet default: on s10 (win32) it hit cross-platform worktree fragility (worktree \"already exists\" leak on re-create, and worktree-branch merges landing nothing -> 0 commits). Until that is hardened and validated on all runner OSes, max_doers stays 1 so sprints use the pre-parallelism serial path (which commits doers directly on the sprint branch, no worktree/merge machinery). Set >1 to opt into the experimental parallel path. Width is also capped by the harness concurrency limit and the number of ready tasks. Project-agnostic: no assumptions about language, layout, or task shape.",
+    "max_doers": 1,
+    "worktree_root": ".auto-sprint/wt"
+  },
+  "historical": {
+    "_doc": "Written by harvester after each sprint. Contains actual per-role output token averages from sprint-log JSONL files. Used by auto-sprint.js computeSprintQuote() to improve future estimates. Do not edit manually.",
+    "max_sprints_in_sample": 5,
+    "sprints_sampled": 1,
+    "last_updated": "2026-08-02",
+    "cycle_avg": 2,
+    "reviewer_ratio_avg": 0.13542189186313405,
+    "bucket_avg_tokens": {
+      "M": 17743.444444444445,
+      "L": 18835
+    },
+    "roles": {
+      "setup-shell": {
+        "avg_output_tokens": 3643,
+        "sample_n": 1
+      },
+      "setup": {
+        "avg_output_tokens": 5366,
+        "sample_n": 1
+      },
+      "state-read": {
+        "avg_output_tokens": 640,
+        "sample_n": 1
+      },
+      "preflight-bd-schema": {
+        "avg_output_tokens": 684,
+        "sample_n": 1
+      },
+      "state-init": {
+        "avg_output_tokens": 1258,
+        "sample_n": 1
+      },
+      "sprint-meta": {
+        "avg_output_tokens": 698,
+        "sample_n": 1
+      },
+      "stamp-setup": {
+        "avg_output_tokens": 294,
+        "sample_n": 1
+      },
+      "stamp-plan": {
+        "avg_output_tokens": 406.5,
+        "sample_n": 2
+      },
+      "cycle-meta": {
+        "avg_output_tokens": 4351,
+        "sample_n": 2
+      },
+      "cycle-state": {
+        "avg_output_tokens": 7899.5,
+        "sample_n": 2
+      },
+      "state": {
+        "avg_output_tokens": 1208,
+        "sample_n": 4
+      },
+      "planner": {
+        "avg_output_tokens": 15960.5,
+        "sample_n": 2
+      },
+      "plan-reviewer": {
+        "avg_output_tokens": 13367.5,
+        "sample_n": 2
+      },
+      "feedback-commit-plan-reviewer": {
+        "avg_output_tokens": 2588,
+        "sample_n": 1
+      },
+      "plan-commit": {
+        "avg_output_tokens": 3756,
+        "sample_n": 1
+      },
+      "stamp-develop": {
+        "avg_output_tokens": 292,
+        "sample_n": 2
+      },
+      "heartbeat": {
+        "avg_output_tokens": 2316,
+        "sample_n": 5
+      },
+      "ready-streaks": {
+        "avg_output_tokens": 3773.4,
+        "sample_n": 5
+      },
+      "doer": {
+        "avg_output_tokens": 39472.2,
+        "sample_n": 5
+      },
+      "reviewer": {
+        "avg_output_tokens": 8909,
+        "sample_n": 3
+      },
+      "log-append-iter": {
+        "avg_output_tokens": 2933,
+        "sample_n": 3
+      },
+      "push-sha": {
+        "avg_output_tokens": 673,
+        "sample_n": 2
+      },
+      "exit-check": {
+        "avg_output_tokens": 4511,
+        "sample_n": 2
+      },
+      "log-append-end": {
+        "avg_output_tokens": 3562.5,
+        "sample_n": 2
+      },
+      "reset-orphans": {
+        "avg_output_tokens": 528,
+        "sample_n": 1
+      },
+      "check-blockers": {
+        "avg_output_tokens": 11347,
+        "sample_n": 1
+      },
+      "deadlock-diag": {
+        "avg_output_tokens": 1320,
+        "sample_n": 1
+      },
+      "stamp-harvest": {
+        "avg_output_tokens": 773,
+        "sample_n": 1
+      },
+      "harvest-clean-process-files": {
+        "avg_output_tokens": 1167,
+        "sample_n": 1
+      },
+      "final-reviewer": {
+        "avg_output_tokens": 8318,
+        "sample_n": 1
+      }
+    }
+  }
+}

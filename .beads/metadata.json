@@ -1,0 +1,7 @@
+{
+  "database": "dolt",
+  "backend": "dolt",
+  "dolt_mode": "embedded",
+  "dolt_database": "ForIra",
+  "project_id": "6bf03f22-7cef-4355-838b-043f4fba3f58"
+}
