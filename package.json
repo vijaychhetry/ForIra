@@ -9,7 +9,8 @@
     "ios": "expo run:ios",
     "web": "expo start --web",
     "lint": "expo lint",
-    "verify:read-tab-nav": "node scripts/verify-read-tab-navigation.js"
+    "verify:read-tab-nav": "node scripts/verify-read-tab-navigation.js",
+    "verify:matra-level-flow": "node scripts/verify-matra-level-flow.js"
   },
   "dependencies": {
     "@expo/vector-icons": "^14.1.0",
