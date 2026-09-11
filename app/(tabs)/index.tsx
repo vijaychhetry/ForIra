@@ -24,11 +24,11 @@ export default function GameHomeScreen() {
         Choose an activity to start learning!
       </ThemedText>
       <View style={styles.buttonContainer}>
-        <Button title="Learn" onPress={() => router.push('/(tabs)/LearnScreen')} />
+        <Button title="Learn" onPress={() => router.push('../screens/LearnScreen?type=vowels')} />
         {/* <Button title="Match" onPress={() => router.push('./match')} /> */}
         {/* <Button title="Trace" onPress={() => router.push('./trace')} /> */}
-        <Button title="Quiz" onPress={() => router.push('/(tabs)/QuizScreen')} />
-        <Button title="Quiz2" onPress={() => router.push('/(tabs)/QuizScreen2')} />
+        <Button title="Quiz" onPress={() => router.push('../screens/QuizScreen')} />
+        <Button title="Quiz2" onPress={() => router.push('../screens/QuizScreen2')} />
 
       </View>
     </ThemedView>

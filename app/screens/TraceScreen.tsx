@@ -13,7 +13,7 @@ export default function TraceScreen() {
   const [index, setIndex] = useState(0);
   const [paths, setPaths] = useState<string[]>([]);
   const [currentPath, setCurrentPath] = useState('');
-  const resetTimeout = useRef<NodeJS.Timeout | null>(null);
+  const resetTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const panResponder = useRef(
     PanResponder.create({
@@ -50,7 +50,7 @@ export default function TraceScreen() {
       const { sound } = await Audio.Sound.createAsync(letter.sound);
       await sound.playAsync();
       sound.setOnPlaybackStatusUpdate((status) => {
-        if (status.didJustFinish) sound.unloadAsync();
+        if (status.isLoaded && status.didJustFinish) sound.unloadAsync();
       });
     }
   };
