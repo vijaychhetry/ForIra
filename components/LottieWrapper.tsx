@@ -1,19 +1,19 @@
-// filepath: c:\VijayWS\ForIra\ForIra\components\LottieWrapper.tsx
-// @ts-ignore
 import { Platform } from 'react-native';
 
+// Lottie animations are only supported on native. On web (and, for now, on
+// native until lottie-react-native is re-enabled) render nothing to avoid
+// lottie-react-native errors. Named functions provide a display name so the
+// react/display-name lint rule is satisfied.
 let LottieView: any;
-  console.log("platform", Platform.OS);
 
 if (Platform.OS === 'web') {
-  // On web, render nothing to avoid lottie-react-native errors
-  LottieView = () => null;
+  LottieView = function LottieViewWeb() {
+    return null;
+  };
 } else {
-  // Use lottie-react-native for native
-  console.log("platform", Platform.OS);
-  // LottieView = () => require('lottie-react-native').default;
-
- LottieView = () => null;// require('lottie-react-native').default;
+  LottieView = function LottieViewNative() {
+    return null;
+  };
 }
 
 export default LottieView;

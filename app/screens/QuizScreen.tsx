@@ -15,8 +15,24 @@ import confettiAnimation from '../../assets/animations/congrats.json';
 import { hindiVowels as letters } from '../constants/hindiLetters';
 import { playSoundAsync } from '../helpers/audioHelpers';
 
-function generateQuestions() {
-  const imageToLetter = letters.slice(0, 6).map((item) => {
+type Question =
+  | {
+      type: 'image-to-letter';
+      image: any;
+      answer: string;
+      options: string[];
+      question: string;
+    }
+  | {
+      type: 'letter-to-image';
+      letter: string;
+      answer: any;
+      options: any[];
+      question: string;
+    };
+
+function generateQuestions(): Question[] {
+  const imageToLetter: Question[] = letters.slice(0, 6).map((item) => {
     const options = [item.letter];
     while (options.length < 4) {
       const random = letters[Math.floor(Math.random() * letters.length)].letter;
@@ -32,7 +48,7 @@ function generateQuestions() {
     };
   });
 
-  const letterToImage = letters.slice(6).map((item) => {
+  const letterToImage: Question[] = letters.slice(6).map((item) => {
     const options = [item];
     while (options.length < 4) {
       const random = letters[Math.floor(Math.random() * letters.length)];
@@ -86,7 +102,7 @@ export default function QuizScreen() {
       setReward(r => [...r, '🦄']);
       setScore(score + 1);
       setFeedback('Correct! 🦄');
-      if (!muted) await playLetterSound();
+      await playLetterSound();
     } else {
       setReward(reward.slice(0, -1));
       setFeedback('Wrong! Try next.');
@@ -237,7 +253,7 @@ export default function QuizScreen() {
                 quizStyles.navBtn,
                 { backgroundColor: pressed ? '#e3e3e3' : '#ff9800' },
               ]}
-              onPress={() => router.push('/(tabs)/quiz/QuizScreen2')}
+              onPress={() => router.push('./QuizScreen2')}
             >
               <Text style={quizStyles.navBtnText}>Try Match Quiz</Text>
             </Pressable>

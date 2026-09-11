@@ -6,7 +6,7 @@ export default function GameScreen() {
   return (
     <View>
       {/* ...your game UI... */}
-      <Button title="Match Game" onPress={() => router.push('/(tabs)/game/MatchScreen')} />
+      <Button title="Match Game" onPress={() => router.push('./MatchScreen')} />
     </View>
   );
 }

@@ -28,6 +28,30 @@ export default function UnicornColorsQuizScreen() {
   const [wrongSound, setWrongSound] = useState<Audio.Sound | null>(null);
   const [questionSound, setQuestionSound] = useState<Audio.Sound | null>(null);
 
+  const generateOptions = useCallback((questionIdx: number) => {
+    const currentColor = colors[questionIdx];
+    const otherColors = colors.filter(c => c.id !== currentColor.id);
+    const shuffledOthers = shuffle(otherColors).slice(0, 3);
+    const allOptions = shuffle([currentColor, ...shuffledOthers]);
+    if (!allOptions.some(opt => opt.id === currentColor.id)) {
+      allOptions[0] = currentColor;
+    }
+    setOptions(allOptions.map(c => c.hi));
+  }, []);
+
+  const playQuestionSound = useCallback(async () => {
+    try {
+      if (questionSound) {
+        await questionSound.unloadAsync();
+      }
+      const { sound } = await Audio.Sound.createAsync(colors[currentQuestion].sound);
+      setQuestionSound(sound);
+      await sound.playAsync();
+    } catch (error) {
+      console.log('Error playing question sound:', error);
+    }
+  }, [currentQuestion, questionSound]);
+
   useEffect(() => {
     generateOptions(currentQuestion);
   }, [currentQuestion, generateOptions]);
@@ -58,30 +82,6 @@ export default function UnicornColorsQuizScreen() {
       playQuestionSound();
     }
   }, [currentQuestion, playQuestionSound]);
-
-  const generateOptions = useCallback((questionIdx: number) => {
-    const currentColor = colors[questionIdx];
-    const otherColors = colors.filter(c => c.id !== currentColor.id);
-    const shuffledOthers = shuffle(otherColors).slice(0, 3);
-    const allOptions = shuffle([currentColor, ...shuffledOthers]);
-    if (!allOptions.some(opt => opt.id === currentColor.id)) {
-      allOptions[0] = currentColor;
-    }
-    setOptions(allOptions.map(c => c.hi));
-  }, []);
-
-  const playQuestionSound = useCallback(async () => {
-    try {
-      if (questionSound) {
-        await questionSound.unloadAsync();
-      }
-      const { sound } = await Audio.Sound.createAsync(colors[currentQuestion].sound);
-      setQuestionSound(sound);
-      await sound.playAsync();
-    } catch (error) {
-      console.log('Error playing question sound:', error);
-    }
-  }, [currentQuestion, questionSound]);
 
   const playSound = async (sound: Audio.Sound | null) => {
     try {

@@ -1,0 +1,17 @@
+{
+  "name": "IRA-Hindi",
+  "install": "npm ci",
+  "terminals": [
+    {
+      "name": "expo-web",
+      "command": "npx expo start --web --port 8081",
+      "description": "Expo (React Native Web) dev server with Metro bundler. Open http://localhost:8081/ to view the app."
+    }
+  ],
+  "ports": [
+    {
+      "name": "expo-web",
+      "port": 8081
+    }
+  ]
+}
